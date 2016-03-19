@@ -1,91 +1,45 @@
 package brouci;
 
-import java.util.Map;
-import java.util.TreeMap;
 
-public class Brouk {
+import java.util.ArrayList;
+
+public class Brouk extends Field {
 
     private class Move {
 
         /**
-         * Kazda vetev Trie reprezentuje konfiguraci Brouka, tj.
-         * jak je Brouk lokalizovan (co ma nad sebou, pod sebou, atd.).
+         * Field[0] = smer nahoru
+         * Field[1] = smer doprava, atd ...
          */
-        private class Trie {
-
-            private class Node {
-                private FieldType content ;
-                private Map<FieldType, Node> potomci ;
-
-                public Node() {
-                    potomci = new TreeMap<>() ;
-                    this.content = FieldType.UNKNOWN ;
-                }
-
-                public Node(FieldType fieldType) {
-                    potomci = new TreeMap<>() ;
-                    this.content = fieldType ;
-                }
-
-                public FieldType getContent() {
-                    return content ;
-                }
-
-                /** V potomcich hleda fieldType */
-                Node find(FieldType fieldType) {
-                    return potomci.get(fieldType) ;
-                }
-
-                /** Do potomci prida noveho potomka noda*/
-                void addPotomek(Node node) {
-                    potomci.put(node.getContent(), node) ;
-                }
-            }
-
-            private Node actualState ;
-            private Node Root ;
-            private Node lastMove ;
-            private boolean giveRandomResult ;
-
-            public Trie() {
-                Root = new Node() ;
-                actualState = Root ;
-            }
-
-            void setLastMoveScore() {
-
-            }
-
-            /**
-             * zmeni actualState.
-             */
-            void nextState(FieldType fieldType) {
-                Node node = actualState.find(fieldType) ; //najde potomka
-                if (node == null){
-                    //takoveho potomka nema --> musime ho vytvorit
-                    giveRandomResult = true ;
-                    node = new Node(fieldType) ;
-                    actualState.addPotomek(node);
-                }
-                actualState = node ;
-            }
-
-            /**
-             * Na zaklade parametru projde trii a vrati dalsi Move.
-             * Jestli na konci trie neni zatim zadny zapamatovany vysledek, vrati se nahodny pohyb.
-             * @param fieldTypes ma ctyri prvky
-             */
-            void method(FieldType[] fieldTypes) {
-                for (int i = 0; i < fieldTypes.length; i++) {
-                    nextState(fieldTypes[i]);
-                }
-            }
-        }
-
-        private Trie trie ;
+        private ArrayList<Field[]> moves ;
 
         public Move() {
-            trie = new Trie() ;
+
+        }
+
+        /**
+         * Najde posledni pohyb, ktery udelal s konfiguraci reprezentovanou pomoci buggNeighbourhood
+         */
+        private void findMove(Environment.BuggNeighbourhood buggNeighbourhood) {
+            for (Field[] field : moves) {
+                boolean found = false ;
+                //zkontrolujeme, jestli field (tj. moves[i]) je stejny, jako buggNeighbourhood
+                for (int i = 0; i < field.length; i++) {
+                    //field = moves[i] = jedna zapamatovana situace
+                    //buggNeighbourhood = aktualni situace
+                    if (!field[i].equals(buggNeighbourhood.get(i))) {
+                        found = false ;
+                        break ;
+                    }
+
+                    if (i == field.length - 1) {
+                        found = true ;
+                    }
+                }
+                if (found) {
+                    //TODO neco vrat
+                }
+            }
         }
 
         void getNextMove(Environment.BuggNeighbourhood buggNeighbourhood) {
@@ -99,16 +53,18 @@ public class Brouk {
         }
 
         void setLastMoveScore() {
-            trie.setLastMoveScore(); //
+
         }
     }
 
     private Move move ;
     private Coordinate location ;
+    private int energy ;
 
 
     public Brouk() {
         move = new Move() ;
+        energy = 100 ;
     }
 
     public Coordinate getLocation() {
@@ -117,6 +73,13 @@ public class Brouk {
 
     public void setLocation(Coordinate coordinate) {
         location = coordinate ;
+    }
+
+    /**
+     * Snizi energii o konstantu.
+     */
+    public void lowerEnergy() {
+        this.energy -= 10 ;
     }
 
 

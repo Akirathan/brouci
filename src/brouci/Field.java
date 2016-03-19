@@ -1,23 +1,14 @@
 package brouci;
 
+import java.util.Random;
+
 public abstract class Field {
-    //private FieldType type ;
 
     public Field() {
-        //this.type = FieldType.UNKNOWN ;
-    }
 
-    /*
-    public FieldType getType() {
-        return this.type ;
     }
-
-    public void setType(FieldType type) {
-        this.type = type ;
-    } */
 
     char print() {
-
         if (Block.class.isAssignableFrom(this.getClass())) {
             return 'X' ;
         }
@@ -31,19 +22,6 @@ public abstract class Field {
             return ' ' ;
         }
         return ' ';
-
-        /*
-        switch (type) {
-            case BLOCK:
-                return 'X' ;
-            case FOOD:
-                return 'F' ;
-            case WATER:
-                return 'W' ;
-            case FREE:
-                return ' ' ;
-        }
-        return ' ' ; */
     }
 }
 
@@ -60,5 +38,13 @@ class Food extends Field {
 }
 
 class Free extends Field {
+    /**
+     * Nahodne generovan.
+     */
+    //int terrainSeverity ;
 
+    public Free() {
+        /*Random random = new Random() ;
+        terrainSeverity = random.nextInt(30) ;*/
+    }
 }
