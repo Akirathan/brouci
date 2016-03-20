@@ -53,7 +53,7 @@ public class Environment {
         }
 
         /**
-         * Vrati dany smer podle parametru.
+         * Vrati sousedni pole podle zadaneho smeru.
          * 0 = nahore
          * 1 = vpravo, atd ..
          */
@@ -111,6 +111,10 @@ public class Environment {
         loadFromFile(filename);
         generateFood();
         printField();
+    }
+
+    public Environment() {
+        field = new Field[0][0] ;
     }
 
     private void loadFromFile(String filename) {

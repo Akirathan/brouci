@@ -23,28 +23,39 @@ public abstract class Field {
         }
         return ' ';
     }
+
+    @Override
+    public abstract boolean equals(Object o) ;
 }
 
 class Block extends Field {
 
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Block ;
+    }
 }
 
 class Water extends Field {
 
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Water ;
+    }
 }
 
 class Food extends Field {
 
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Food ;
+    }
 }
 
 class Free extends Field {
-    /**
-     * Nahodne generovan.
-     */
-    //int terrainSeverity ;
 
-    public Free() {
-        /*Random random = new Random() ;
-        terrainSeverity = random.nextInt(30) ;*/
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Free ;
     }
 }

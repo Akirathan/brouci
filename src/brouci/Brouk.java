@@ -2,58 +2,84 @@ package brouci;
 
 
 import java.util.ArrayList;
+import java.util.Random;
 
 public class Brouk extends Field {
 
     private class Move {
 
         /**
-         * Field[0] = smer nahoru
-         * Field[1] = smer doprava, atd ...
+         * Trida reprezentujici zapamatovane pohyby.
          */
-        private ArrayList<Field[]> moves ;
+        private class MoveType {
+            Field[] fields ;
+            Direction direction ;
 
-        public Move() {
+            MoveType() {
+                fields = new Field[4] ;
+                direction = Direction.NONE ;
+            }
 
-        }
-
-        /**
-         * Najde posledni pohyb, ktery udelal s konfiguraci reprezentovanou pomoci buggNeighbourhood
-         */
-        private void findMove(Environment.BuggNeighbourhood buggNeighbourhood) {
-            for (Field[] field : moves) {
-                boolean found = false ;
-                //zkontrolujeme, jestli field (tj. moves[i]) je stejny, jako buggNeighbourhood
-                for (int i = 0; i < field.length; i++) {
-                    //field = moves[i] = jedna zapamatovana situace
-                    //buggNeighbourhood = aktualni situace
-                    if (!field[i].equals(buggNeighbourhood.get(i))) {
-                        found = false ;
-                        break ;
-                    }
-
-                    if (i == field.length - 1) {
-                        found = true ;
-                    }
+            /**
+             * Zkopiruje konfiguraci z buggNeighbourhood.
+             * Plne inicializuje MoveType.
+             */
+            MoveType(Environment.BuggNeighbourhood buggNeighbourhood) {
+                this() ;
+                for (int i = 0; i < fields.length; i++) {
+                    fields[i] = buggNeighbourhood.get(i) ;
                 }
-                if (found) {
-                    //TODO neco vrat
+            }
+
+            /**
+             * Vrati true, pokud dany MoveType s danym BuggNeighbourhood odpovidaji stejne konfiguraci.
+             * Potrebne v metode getNextMove().
+             * @param o BuggNeighbourhood
+             * @return
+             */
+            @Override
+            public boolean equals(Object o) {
+                if (o instanceof Environment.BuggNeighbourhood) {
+                    Environment.BuggNeighbourhood buggNeighbourhood = (Environment.BuggNeighbourhood)o ;
+                    int i = 0 ;
+                    while (fields[i].equals(buggNeighbourhood.get(i)) && i < 4)
+                        i++ ;
+
+                    if (i == 4) //prosli jsme cely fields[i]
+                        return true ;
+                    else
+                        return false ;
                 }
+                else return false ;
             }
         }
 
-        void getNextMove(Environment.BuggNeighbourhood buggNeighbourhood) {
-        /*
-        Location location = BroukgetLocation() ;
-        FieldType ft1 = ...
-        FieldType ft2 = ...
-        FieldType ft3 = ...
-        FieldType ft4 = ...
+        /**
+         * Reprezentuje pole zapamatovanych pohybu.
          */
+        private ArrayList<MoveType> moveTypes;
+
+        public Move() {
+            moveTypes = new ArrayList<>() ;
         }
 
-        void setLastMoveScore() {
-
+        /**
+         * Najde posledni pohyb, ktery udelal s konfiguraci reprezentovanou pomoci buggNeighbourhood.
+         * Vrati smer, ktery byl zapamatovany, nebo nahodny smer, kdyz v pameti nenajde konfiguraci
+         * odpovidajici buggNeighbourhood
+         */
+        public Direction getNextMove(Environment.BuggNeighbourhood buggNeighbourhood) {
+            for (MoveType moveType : moveTypes) {
+                if (moveType.equals(buggNeighbourhood)) {
+                    return moveType.direction ;
+                }
+            }
+            //dana konfigurace neni v pameti, vrat nahodny smer a zapamatuj si konfiguraci a smer
+            MoveType movetype = new MoveType(buggNeighbourhood) ;
+            Direction direction = Direction.RANDOM ;
+            movetype.direction = direction ;
+            moveTypes.add(movetype) ;
+            return direction ;
         }
     }
 
@@ -83,15 +109,18 @@ public class Brouk extends Field {
     }
 
 
-
     /**
-     * Vrati souradnice, na ktere chce Brouk jit.
+     * Vrati smer, kam chce brouk jit
      * Samotne posunuti Brouka zpracuje Environment.
-     * @return souradnice, na ktere brouk chce jit
+     * @return smer, kam chce brouk jit
      */
     public Direction getNextMove(Environment.BuggNeighbourhood buggNeighbourhood) {
-        return Direction.UP ;
-        //...
+        return move.getNextMove(buggNeighbourhood);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return false ;
     }
 
 }
@@ -101,11 +130,16 @@ enum Direction {
     RIGHT(0,1),
     DOWN(1,0),
     LEFT(0,-1),
-    NONE(0,0) ;
+    NONE(0,0),
+    RANDOM() ;
 
     Direction(int X, int Y) {
         this.X = X ;
         this.Y = Y ;
+    }
+
+    Direction() {
+        getRandomDirection() ;
     }
 
     private int X, Y ;
@@ -115,6 +149,24 @@ enum Direction {
      */
     public Coordinate getCoordinate() {
         return new Coordinate(X, Y) ;
+    }
+
+    private Direction getRandomDirection() {
+        Random random = new Random() ;
+        int a = random.nextInt(4) ;
+        switch (a) {
+            case 0 :
+                return NONE ;
+            case 1 :
+                return UP ;
+            case 2 :
+                return RIGHT;
+            case 3 :
+                return DOWN ;
+            case 4 :
+                return LEFT ;
+        }
+        return NONE ;
     }
 }
 

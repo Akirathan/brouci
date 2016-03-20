@@ -7,5 +7,3 @@ public class Main {
         Environment environment = new Environment("/afs/ms/u/b/bruchpa/zk.txt") ;
     }
 }
-
-
