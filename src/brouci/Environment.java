@@ -92,13 +92,7 @@ public class Environment {
     }
 
     private Field[][] field ;
-
-    /**
-     * Vrati obsah policka na danych souradnicich
-     */
-    Field getField(Coordinate coordinate) {
-        return field[coordinate.X][coordinate.Y] ;
-    }
+    private GUI gui ;
 
     /**
      * Slouzi pro rychle vyhledavani brouku podle souradnic.
@@ -111,6 +105,13 @@ public class Environment {
         loadFromFile(filename);
         generateFood();
         printField();
+    }
+
+    /**
+     * Vrati obsah policka na danych souradnicich
+     */
+    Field getField(Coordinate coordinate) {
+        return field[coordinate.X][coordinate.Y] ;
     }
 
     public Environment() {
@@ -232,7 +233,7 @@ public class Environment {
     }
 
     /**
-     * Vrati 4 sousedni policka kolem brouk.
+     * Vrati 4 sousedni policka kolem brouka.
      * Pozdeji se tyto 4 sousedni policka tomuto broukovi predaji,
      * na zaklade nich se bude brouk pohybovat.
      * @param brouk

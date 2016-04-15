@@ -171,7 +171,7 @@ enum Direction {
 }
 
 
-class Coordinate implements Comparable {
+class Coordinate implements Comparable<Coordinate> {
     public int X, Y ;
 
     public Coordinate plus(Coordinate other) {
@@ -184,13 +184,12 @@ class Coordinate implements Comparable {
     }
 
     @Override
-    public int compareTo(Object o) {
-        Coordinate other = (Coordinate)o ;
-        if (this.X < other.X ||
-                (this.X == other.X && this.Y < other.Y))
+    public int compareTo(Coordinate o) {
+        if (this.X < o.X ||
+                (this.X == o.X && this.Y < o.Y))
             return -1 ;
-        else if (this.X > other.X ||
-                (this.X == other.X && this.Y > other.Y))
+        else if (this.X > o.X ||
+                (this.X == o.X && this.Y > o.Y))
             return 1 ;
         else return 0 ;
     }
