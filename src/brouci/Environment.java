@@ -4,6 +4,7 @@ package brouci;
 import java.io.*;
 import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 
 public class Environment {
 
@@ -41,11 +42,11 @@ public class Environment {
         }
 
         private void setDown() {
-            neighbourhood[1] = getField(new Coordinate(centralCoordinate.X + 1, centralCoordinate.Y)) ;
+            neighbourhood[2] = getField(new Coordinate(centralCoordinate.X + 1, centralCoordinate.Y)) ;
         }
 
         private void setLeft() {
-            neighbourhood[1] = getField(new Coordinate(centralCoordinate.X, centralCoordinate.Y - 1)) ;
+            neighbourhood[3] = getField(new Coordinate(centralCoordinate.X, centralCoordinate.Y - 1)) ;
         }
 
         public Coordinate getCentralCoordinate() {
@@ -93,6 +94,7 @@ public class Environment {
 
     private Field[][] field ;
     private GUI gui ;
+    private boolean endOfSimulation ;
 
     /**
      * Slouzi pro rychle vyhledavani brouku podle souradnic.
@@ -102,20 +104,49 @@ public class Environment {
     private Map<Coordinate, Brouk> buggMap ;
 
     public Environment(String filename) {
+        buggMap = new TreeMap<>() ;
         loadFromFile(filename);
+        gui = new GUI(field, this) ;
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                gui.setVisible(true) ;
+            }
+        });
         generateFood();
-        printField();
-    }
-
-    /**
-     * Vrati obsah policka na danych souradnicich
-     */
-    Field getField(Coordinate coordinate) {
-        return field[coordinate.X][coordinate.Y] ;
+        drawField() ;
+        //simulationCycle(); //DEBUG
     }
 
     public Environment() {
         field = new Field[0][0] ;
+    }
+
+    /**
+     * Nastavi lokaci brouka a aktualizuje buggMap
+     * @param brouk
+     * @param location
+     */
+    private void setBroukLocation(Brouk brouk, Coordinate location) {
+        Coordinate oldLocation = brouk.getLocation() ;
+        brouk.setLocation(location);
+        buggMap.remove(oldLocation) ;
+        buggMap.put(location, brouk) ;
+
+        //zmen field
+        field[oldLocation.X][oldLocation.Y] = new Free() ;
+        field[location.X][location.Y] = brouk ;
+    }
+
+    /**
+     * Vrati obsah policka na danych souradnicich.
+     * Pokud jsou souradnice mimo meze, tak vraci Block.
+     */
+    Field getField(Coordinate coordinate) {
+        if (coordinate.X >= field.length || coordinate.Y >= field[0].length ||
+                coordinate.X < 0 || coordinate.Y < 0)
+            return new Block() ;
+
+        else return field[coordinate.X][coordinate.Y] ;
     }
 
     private void loadFromFile(String filename) {
@@ -131,15 +162,17 @@ public class Environment {
                 for (char c : line.toCharArray()) {
                     switch (c) {
                         case ' ' :
-                            //field[i][j].setType(FieldType.FREE);
                             field[i][j] = new Free() ;
                             break ;
+                        case 'B' :
+                            Coordinate coordinate = new Coordinate(i, j) ;
+                            field[i][j] = new Brouk(coordinate) ;
+                            buggMap.put(coordinate, (Brouk)field[i][j]) ;
+                            break ;
                         case 'X' :
-                            //field[i][j].setType(FieldType.BLOCK);
                             field[i][j] = new Block() ;
                             break ;
                         case 'W' :
-                            //field[i][j].setType(FieldType.WATER);
                             field[i][j] = new Water() ;
                             break ;
                         //TODO
@@ -160,8 +193,12 @@ public class Environment {
         }
     }
 
+    private void drawField() {
+        gui.drawField();
+    }
+
     private void generateFood() {
-        double foodGeneration = 0.7 ; //nastavitelne
+        double foodGeneration = 0.0 ; //nastavitelne
         Random random = new Random() ;
         for (int i = 0; i < field.length; i++) {
             for (int j = 0; j < field[0].length; j++) {
@@ -181,27 +218,16 @@ public class Environment {
      * Na konci kola se muze napriklad zmenit pocasi.
      * TODO prejmenovat.
      * */
-    private Brouk getNext() {
-        return new Brouk() ;
+    private Brouk getNextBrouk() {
+        return null ;
     }
 
-    public void method() {
-        /*
-         Brouk[] broukArray ;
-         for (Brouk brouk : broukArray ) {
-            Move move = brouk.getNextMove() ;
-            evaluateMove(move)
-         }
-        */
-        Brouk brouk = getNext() ;
-
-    }
 
     /**
      * Zpracuje pohyb Brouka.
      * Brouk sam osetruje nemoznost pohnout se na BLOCK (tato metoda to nemusi resit).
      */
-    void processMove(Brouk brouk, Direction direction) {
+    private void processMove(Brouk brouk, Direction direction) {
         Coordinate newCoordinate = brouk.getLocation().plus(direction.getCoordinate()) ; //souradnice, kam chce brouk jit
         Field newField = field[newCoordinate.X][newCoordinate.Y] ; //pole, kam chce brouk jit
 
@@ -210,11 +236,17 @@ public class Environment {
 
         }
         else if (newField instanceof Free) {
-            brouk.setLocation(newCoordinate); //nastav broukovi nove souradnice
             brouk.lowerEnergy(); //sniz mu energii na zaklade narocnosti terenu (zatim napevno ubira 10 energie)
+            setBroukLocation(brouk, newCoordinate); //nastavit novou lokaci brouka
         }
         else if (newField instanceof Brouk) {
-            Brouk bugg = buggMap.get(newCoordinate) ; //vyhledat brouka podle indexu v mape
+            Brouk brouk1 = buggMap.get(newCoordinate) ; //vyhledat brouka podle indexu v mape
+            buggInteraction(brouk, brouk1);
+            //TODO
+        }
+        else if (newField instanceof Food) {
+            brouk.eatFood((Food)newField);
+            setBroukLocation(brouk, newCoordinate);
         }
     }
 
@@ -239,7 +271,27 @@ public class Environment {
      * @param brouk
      */
     BuggNeighbourhood getBuggNeighbourhood(Brouk brouk) {
-        return new BuggNeighbourhood(new Coordinate(0,0)) ; //TODO
+        return new BuggNeighbourhood(brouk.getLocation()) ;
     }
+
+    void simulationCycle() {
+        double simulationSpeed = 1.0 ; //PROPERTIES
+        while(!endOfSimulation) {
+            for (Map.Entry<Coordinate,Brouk> entry : buggMap.entrySet()) {
+                BuggNeighbourhood buggNeighbourhood = getBuggNeighbourhood(entry.getValue());
+                Direction nextMove = entry.getValue().getNextMove(buggNeighbourhood);
+                processMove(entry.getValue(), nextMove);
+            }
+            drawField();
+
+            //pouze v tomhle bloku kodu se da simulationCycle prerusit
+            /*try {
+                Thread.sleep(2000); //todo prevod simulationSpeed na milis
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }*/
+        }
+    }
+
 }
 

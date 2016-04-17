@@ -42,7 +42,7 @@ public class Brouk extends Field {
                 if (o instanceof Environment.BuggNeighbourhood) {
                     Environment.BuggNeighbourhood buggNeighbourhood = (Environment.BuggNeighbourhood)o ;
                     int i = 0 ;
-                    while (fields[i].equals(buggNeighbourhood.get(i)) && i < 4)
+                    while (i < 4 && fields[i].equals(buggNeighbourhood.get(i)))
                         i++ ;
 
                     if (i == 4) //prosli jsme cely fields[i]
@@ -75,11 +75,21 @@ public class Brouk extends Field {
                 }
             }
             //dana konfigurace neni v pameti, vrat nahodny smer a zapamatuj si konfiguraci a smer
-            MoveType movetype = new MoveType(buggNeighbourhood) ;
-            Direction direction = Direction.RANDOM ;
-            movetype.direction = direction ;
-            moveTypes.add(movetype) ;
-            return direction ;
+            Direction direction = Direction.getRandomDirection();
+            //zkontroluj, jestli direction nevede na Block
+            if ((direction == Direction.UP && buggNeighbourhood.get(0) instanceof Block) ||
+                (direction == Direction.RIGHT && buggNeighbourhood.get(1) instanceof Block) ||
+                    (direction == Direction.DOWN && buggNeighbourhood.get(2) instanceof Block) ||
+                    (direction == Direction.LEFT && buggNeighbourhood.get(3) instanceof Block))
+                     {
+                return null ;
+            }
+            else {
+                MoveType movetype = new MoveType(buggNeighbourhood); //zapamatuj si konfiguraci
+                movetype.direction = direction; //zapamatuj si smer
+                moveTypes.add(movetype);
+                return direction;
+            }
         }
     }
 
@@ -88,9 +98,10 @@ public class Brouk extends Field {
     private int energy ;
 
 
-    public Brouk() {
+    public Brouk(Coordinate location) {
         move = new Move() ;
         energy = 100 ;
+        this.location = location ;
     }
 
     public Coordinate getLocation() {
@@ -115,7 +126,15 @@ public class Brouk extends Field {
      * @return smer, kam chce brouk jit
      */
     public Direction getNextMove(Environment.BuggNeighbourhood buggNeighbourhood) {
-        return move.getNextMove(buggNeighbourhood);
+        Direction direction = null;
+        while (direction == null) {
+            direction = move.getNextMove(buggNeighbourhood);
+        }
+        return direction ;
+    }
+
+    public void eatFood(Food food) {
+        energy += 10 ;
     }
 
     @Override
@@ -125,22 +144,19 @@ public class Brouk extends Field {
 
 }
 
+
 enum Direction {
     UP(-1,0),
     RIGHT(0,1),
     DOWN(1,0),
     LEFT(0,-1),
-    NONE(0,0),
-    RANDOM() ;
+    NONE(0,0) ;
 
     Direction(int X, int Y) {
         this.X = X ;
         this.Y = Y ;
     }
 
-    Direction() {
-        getRandomDirection() ;
-    }
 
     private int X, Y ;
 
@@ -151,7 +167,7 @@ enum Direction {
         return new Coordinate(X, Y) ;
     }
 
-    private Direction getRandomDirection() {
+    static Direction getRandomDirection() {
         Random random = new Random() ;
         int a = random.nextInt(4) ;
         switch (a) {
