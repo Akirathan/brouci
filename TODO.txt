@@ -1,0 +1,6 @@
+-jak pracovat s Properties?
+
+-jak roztahnout vsechny komponenty uvnitr JPanelu pres cely JPanel?
+
+-Coordinate.plus:
+	Nemela by nevracet new Coordinate(...) ?

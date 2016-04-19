@@ -1,6 +1,5 @@
 package brouci;
 
-import java.util.Random;
 
 public abstract class Field {
 
@@ -8,21 +7,6 @@ public abstract class Field {
 
     }
 
-    char print() {
-        if (Block.class.isAssignableFrom(this.getClass())) {
-            return 'X' ;
-        }
-        else if (Water.class.isAssignableFrom(this.getClass())) {
-            return 'W' ;
-        }
-        else if (Food.class.isAssignableFrom(this.getClass())) {
-            return 'F' ;
-        }
-        else if (Free.class.isAssignableFrom(this.getClass())) {
-            return ' ' ;
-        }
-        return ' ';
-    }
 
     @Override
     public abstract boolean equals(Object o) ;
@@ -34,6 +18,16 @@ class Block extends Field {
     public boolean equals(Object o) {
         return o instanceof Block ;
     }
+
+    @Override
+    public int hashCode() {
+        return 1 ;
+    }
+
+    @Override
+    public String toString() {
+        return "Block" ;
+    }
 }
 
 class Water extends Field {
@@ -41,6 +35,11 @@ class Water extends Field {
     @Override
     public boolean equals(Object o) {
         return o instanceof Water ;
+    }
+
+    @Override
+    public String toString() {
+        return "Water" ;
     }
 }
 
@@ -50,6 +49,16 @@ class Food extends Field {
     public boolean equals(Object o) {
         return o instanceof Food ;
     }
+
+    @Override
+    public int hashCode() {
+        return 4 ;
+    }
+
+    @Override
+    public String toString() {
+        return "Food" ;
+    }
 }
 
 class Free extends Field {
@@ -57,5 +66,15 @@ class Free extends Field {
     @Override
     public boolean equals(Object o) {
         return o instanceof Free ;
+    }
+
+    @Override
+    public int hashCode() {
+        return 2 ;
+    }
+
+    @Override
+    public String toString() {
+        return "Free" ;
     }
 }

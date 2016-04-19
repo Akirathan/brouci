@@ -8,90 +8,6 @@ import java.util.TreeMap;
 
 public class Environment {
 
-    /**
-     * Trida reprezentuje 4 sousedni policka kolem Brouka,
-     * to je vse, co Brouk potrebuje videt z Environment.
-     */
-    class BuggNeighbourhood {
-        private Field[] neighbourhood ;
-
-        /**
-         * Souradnice, kolem ktere je obestaveny cely BuggNeighbourhood
-         */
-        private Coordinate centralCoordinate ;
-
-        /**
-         * Vyplni vnitrni data BuggNeighbourhoodu podle parametru.
-         * @param coordinate souradnice policka, kolem ktereho budeme vytvaret BuggNeighbourhood
-         */
-        public BuggNeighbourhood(Coordinate coordinate) {
-            centralCoordinate = coordinate ;
-            neighbourhood = new Field[4] ;
-            setUp();
-            setRight();
-            setDown();
-            setLeft();
-        }
-
-        private void setUp() {
-            neighbourhood[0] = getField(new Coordinate(centralCoordinate.X - 1, centralCoordinate.Y)) ;
-        }
-
-        private void setRight() {
-            neighbourhood[1] = getField(new Coordinate(centralCoordinate.X, centralCoordinate.Y + 1)) ;
-        }
-
-        private void setDown() {
-            neighbourhood[2] = getField(new Coordinate(centralCoordinate.X + 1, centralCoordinate.Y)) ;
-        }
-
-        private void setLeft() {
-            neighbourhood[3] = getField(new Coordinate(centralCoordinate.X, centralCoordinate.Y - 1)) ;
-        }
-
-        public Coordinate getCentralCoordinate() {
-            return centralCoordinate ;
-        }
-
-        /**
-         * Vrati sousedni pole podle zadaneho smeru.
-         * 0 = nahore
-         * 1 = vpravo, atd ..
-         */
-        public Field get(int direction) {
-            switch (direction) {
-                case 0 :
-                    return getUp() ;
-                case 1 :
-                    return getRight() ;
-                case 2 :
-                    return  getDown() ;
-                case 3 :
-                    return getLeft() ;
-            }
-            return new Block() ;
-        }
-
-        /**
-         * Vrati to, co je v neighbourhood nahore
-         */
-        private Field getUp() {
-            return neighbourhood[0] ;
-        }
-
-        private Field getRight() {
-            return neighbourhood[1] ;
-        }
-
-        private Field getDown() {
-            return neighbourhood[2] ;
-        }
-
-        private Field getLeft() {
-            return neighbourhood[3] ;
-        }
-    }
-
     private Field[][] field ;
     private GUI gui ;
     private boolean endOfSimulation ;
@@ -112,7 +28,7 @@ public class Environment {
                 gui.setVisible(true) ;
             }
         });
-        generateFood();
+        //generateFood();
         drawField() ;
         //simulationCycle(); //DEBUG
     }
@@ -141,7 +57,7 @@ public class Environment {
      * Vrati obsah policka na danych souradnicich.
      * Pokud jsou souradnice mimo meze, tak vraci Block.
      */
-    Field getField(Coordinate coordinate) {
+    public Field getField(Coordinate coordinate) {
         if (coordinate.X >= field.length || coordinate.Y >= field[0].length ||
                 coordinate.X < 0 || coordinate.Y < 0)
             return new Block() ;
@@ -149,6 +65,10 @@ public class Environment {
         else return field[coordinate.X][coordinate.Y] ;
     }
 
+    /**
+     * Naplni field
+     * @param filename
+     */
     private void loadFromFile(String filename) {
         try {
             BufferedReader bufferedReader = new BufferedReader(new FileReader(filename)) ;
@@ -182,15 +102,6 @@ public class Environment {
                 i ++ ;
             }
         } catch (IOException e) { }
-    }
-
-    private void printField() {
-        for (int i = 0; i < field.length; i++) {
-            for (int j = 0; j < field[0].length; j++) {
-                System.out.print(field[i][j].print());
-            }
-            System.out.println();
-        }
     }
 
     private void drawField() {
@@ -271,7 +182,7 @@ public class Environment {
      * @param brouk
      */
     BuggNeighbourhood getBuggNeighbourhood(Brouk brouk) {
-        return new BuggNeighbourhood(brouk.getLocation()) ;
+        return new BuggNeighbourhood(brouk.getLocation(), this) ;
     }
 
     void simulationCycle() {

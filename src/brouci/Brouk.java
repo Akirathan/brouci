@@ -1,94 +1,48 @@
 package brouci;
 
 
-import java.util.ArrayList;
-import java.util.Random;
+import java.util.*;
 
 public class Brouk extends Field {
 
     private class Move {
 
         /**
-         * Trida reprezentujici zapamatovane pohyby.
+         * Nemenna tabulka reprezentujici pohybovou funkci Brouka.
+         * f(BuggNeighbourhood) --> Direction
          */
-        private class MoveType {
-            Field[] fields ;
-            Direction direction ;
+        private Map<BuggNeighbourhood, Direction> tableOfMoves ;
 
-            MoveType() {
-                fields = new Field[4] ;
-                direction = Direction.NONE ;
-            }
-
-            /**
-             * Zkopiruje konfiguraci z buggNeighbourhood.
-             * Plne inicializuje MoveType.
-             */
-            MoveType(Environment.BuggNeighbourhood buggNeighbourhood) {
-                this() ;
-                for (int i = 0; i < fields.length; i++) {
-                    fields[i] = buggNeighbourhood.get(i) ;
-                }
-            }
-
-            /**
-             * Vrati true, pokud dany MoveType s danym BuggNeighbourhood odpovidaji stejne konfiguraci.
-             * Potrebne v metode getNextMove().
-             * @param o BuggNeighbourhood
-             * @return
-             */
-            @Override
-            public boolean equals(Object o) {
-                if (o instanceof Environment.BuggNeighbourhood) {
-                    Environment.BuggNeighbourhood buggNeighbourhood = (Environment.BuggNeighbourhood)o ;
-                    int i = 0 ;
-                    while (i < 4 && fields[i].equals(buggNeighbourhood.get(i)))
-                        i++ ;
-
-                    if (i == 4) //prosli jsme cely fields[i]
-                        return true ;
-                    else
-                        return false ;
-                }
-                else return false ;
-            }
-        }
-
-        /**
-         * Reprezentuje pole zapamatovanych pohybu.
-         */
-        private ArrayList<MoveType> moveTypes;
 
         public Move() {
-            moveTypes = new ArrayList<>() ;
+            tableOfMoves = new TreeMap<>() ;
+            initTable();
         }
 
         /**
-         * Najde posledni pohyb, ktery udelal s konfiguraci reprezentovanou pomoci buggNeighbourhood.
-         * Vrati smer, ktery byl zapamatovany, nebo nahodny smer, kdyz v pameti nenajde konfiguraci
-         * odpovidajici buggNeighbourhood
+         * Vyplni tableOfMoves tim, ze vygeneruje vsechny BuggNeighbourhood
          */
-        public Direction getNextMove(Environment.BuggNeighbourhood buggNeighbourhood) {
-            for (MoveType moveType : moveTypes) {
-                if (moveType.equals(buggNeighbourhood)) {
-                    return moveType.direction ;
+        private void initTable() {
+            List<Field> list = Arrays.asList(new Block(), new Free(), new Brouk(), new Food()) ;
+            int cycleCounter = 0 ;
+            for (Field field1 : list) {
+                for (Field field2 : list) {
+                    for (Field field3 : list) {
+                        for (Field field4 : list) {
+                            BuggNeighbourhood buggNeighbourhood = new BuggNeighbourhood(field1, field2, field3, field4) ;
+                            tableOfMoves.put(buggNeighbourhood, Direction.getRandomDirection()) ;
+                            cycleCounter ++ ;
+                        }
+                    }
                 }
             }
-            //dana konfigurace neni v pameti, vrat nahodny smer a zapamatuj si konfiguraci a smer
-            Direction direction = Direction.getRandomDirection();
-            //zkontroluj, jestli direction nevede na Block
-            if ((direction == Direction.UP && buggNeighbourhood.get(0) instanceof Block) ||
-                (direction == Direction.RIGHT && buggNeighbourhood.get(1) instanceof Block) ||
-                    (direction == Direction.DOWN && buggNeighbourhood.get(2) instanceof Block) ||
-                    (direction == Direction.LEFT && buggNeighbourhood.get(3) instanceof Block))
-                     {
-                return null ;
-            }
-            else {
-                MoveType movetype = new MoveType(buggNeighbourhood); //zapamatuj si konfiguraci
-                movetype.direction = direction; //zapamatuj si smer
-                moveTypes.add(movetype);
-                return direction;
+            System.out.println();
+        }
+
+        //D
+        private void printTable() {
+            for (Map.Entry<BuggNeighbourhood,Direction> entry: tableOfMoves.entrySet()) {
+                System.out.println(entry.getKey() + " --> " + entry.getValue());
             }
         }
     }
@@ -97,6 +51,13 @@ public class Brouk extends Field {
     private Coordinate location ;
     private int energy ;
 
+
+    /**
+     * Potrebne pro Move.
+     */
+    public Brouk() {
+
+    }
 
     public Brouk(Coordinate location) {
         move = new Move() ;
@@ -125,11 +86,9 @@ public class Brouk extends Field {
      * Samotne posunuti Brouka zpracuje Environment.
      * @return smer, kam chce brouk jit
      */
-    public Direction getNextMove(Environment.BuggNeighbourhood buggNeighbourhood) {
+    public Direction getNextMove(BuggNeighbourhood buggNeighbourhood) {
         Direction direction = null;
-        while (direction == null) {
-            direction = move.getNextMove(buggNeighbourhood);
-        }
+
         return direction ;
     }
 
@@ -142,71 +101,14 @@ public class Brouk extends Field {
         return false ;
     }
 
-}
-
-
-enum Direction {
-    UP(-1,0),
-    RIGHT(0,1),
-    DOWN(1,0),
-    LEFT(0,-1),
-    NONE(0,0) ;
-
-    Direction(int X, int Y) {
-        this.X = X ;
-        this.Y = Y ;
-    }
-
-
-    private int X, Y ;
-
-    /**
-     * Vrati souradnice smeru.
-     */
-    public Coordinate getCoordinate() {
-        return new Coordinate(X, Y) ;
-    }
-
-    static Direction getRandomDirection() {
-        Random random = new Random() ;
-        int a = random.nextInt(4) ;
-        switch (a) {
-            case 0 :
-                return NONE ;
-            case 1 :
-                return UP ;
-            case 2 :
-                return RIGHT;
-            case 3 :
-                return DOWN ;
-            case 4 :
-                return LEFT ;
-        }
-        return NONE ;
-    }
-}
-
-
-class Coordinate implements Comparable<Coordinate> {
-    public int X, Y ;
-
-    public Coordinate plus(Coordinate other) {
-        return new Coordinate(this.X + other.X, this.Y + other.Y) ;
-    }
-
-    Coordinate(int X, int Y) {
-        this.X = X ;
-        this.Y = Y ;
+    @Override
+    public String toString() {
+        return "Brouk" ;
     }
 
     @Override
-    public int compareTo(Coordinate o) {
-        if (this.X < o.X ||
-                (this.X == o.X && this.Y < o.Y))
-            return -1 ;
-        else if (this.X > o.X ||
-                (this.X == o.X && this.Y > o.Y))
-            return 1 ;
-        else return 0 ;
+    public int hashCode() {
+        return 3 ;
     }
+
 }
