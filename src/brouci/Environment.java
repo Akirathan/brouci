@@ -22,13 +22,13 @@ public class Environment {
     public Environment(String filename) {
         buggMap = new TreeMap<>() ;
         loadFromFile(filename);
-        gui = new GUI(field, this) ;
+        gui = new GUI(this) ;
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 gui.setVisible(true) ;
             }
         });
-        //generateFood();
+        generateFood();
         drawField() ;
         //simulationCycle(); //DEBUG
     }
@@ -42,7 +42,7 @@ public class Environment {
      * @param brouk
      * @param location
      */
-    private void setBroukLocation(Brouk brouk, Coordinate location) {
+    public void setBroukLocation(Brouk brouk, Coordinate location) {
         Coordinate oldLocation = brouk.getLocation() ;
         brouk.setLocation(location);
         buggMap.remove(oldLocation) ;
@@ -51,6 +51,14 @@ public class Environment {
         //zmen field
         field[oldLocation.X][oldLocation.Y] = new Free() ;
         field[location.X][location.Y] = brouk ;
+    }
+
+    public int getFieldWidth() {
+        return field[0].length ;
+    }
+
+    public int getFieldHeight() {
+        return field.length ;
     }
 
     /**
@@ -86,7 +94,7 @@ public class Environment {
                             break ;
                         case 'B' :
                             Coordinate coordinate = new Coordinate(i, j) ;
-                            field[i][j] = new Brouk(coordinate) ;
+                            field[i][j] = new Brouk(coordinate, this) ;
                             buggMap.put(coordinate, (Brouk)field[i][j]) ;
                             break ;
                         case 'X' :
@@ -109,7 +117,7 @@ public class Environment {
     }
 
     private void generateFood() {
-        double foodGeneration = 0.0 ; //nastavitelne
+        double foodGeneration = 0.3 ; //nastavitelne
         Random random = new Random() ;
         for (int i = 0; i < field.length; i++) {
             for (int j = 0; j < field[0].length; j++) {
@@ -138,6 +146,7 @@ public class Environment {
      * Zpracuje pohyb Brouka.
      * Brouk sam osetruje nemoznost pohnout se na BLOCK (tato metoda to nemusi resit).
      */
+    @Deprecated
     private void processMove(Brouk brouk, Direction direction) {
         Coordinate newCoordinate = brouk.getLocation().plus(direction.getCoordinate()) ; //souradnice, kam chce brouk jit
         Field newField = field[newCoordinate.X][newCoordinate.Y] ; //pole, kam chce brouk jit
@@ -185,22 +194,22 @@ public class Environment {
         return new BuggNeighbourhood(brouk.getLocation(), this) ;
     }
 
-    void simulationCycle() {
+    public void simulationCycle() {
         double simulationSpeed = 1.0 ; //PROPERTIES
         while(!endOfSimulation) {
             for (Map.Entry<Coordinate,Brouk> entry : buggMap.entrySet()) {
-                BuggNeighbourhood buggNeighbourhood = getBuggNeighbourhood(entry.getValue());
-                Direction nextMove = entry.getValue().getNextMove(buggNeighbourhood);
-                processMove(entry.getValue(), nextMove);
+                BuggNeighbourhood buggNeighbourhood = getBuggNeighbourhood(entry.getValue()); //sousedni policka daneho brouka
+                entry.getValue().move();
             }
             drawField();
 
             //pouze v tomhle bloku kodu se da simulationCycle prerusit
-            /*try {
+            try {
                 Thread.sleep(2000); //todo prevod simulationSpeed na milis
             } catch (InterruptedException e) {
-                e.printStackTrace();
-            }*/
+                System.out.println("simulationCycle interrupted.");
+                return ;
+            }
         }
     }
 

@@ -1,3 +1,48 @@
+====================================================
+						DONE
+====================================================
+Brouk bude mit referenci na Environment
+
+Pohyb Brouka
+	Brouk bude primo volat Environment.setBroukLocation
+
+Brouk.Move.initTable:
+	-zkontrolovat, jestli Brouk nechce jit do Blocku (OK)
+	-polozka [Block, Block, Block, Block] v tableOfMoves nema smysl
+	-Brouci muzou dlouho stat na miste
+		-za normalnich okolnosti zakazeme vykonat Direction.NONE (OK)
+		-Direction.getRandomDirection nebude vracet NONE (OK)
+		-vyresit zablokovane stavy, tj. stavy jako [Block, Block, Brouk, Block] (OK)
+		-zatim se Brouci budou navzajem brat jako prekazky, prozatim zakazeme interakci (OK)
+			-pro vsechny zablokovane stavy priradime Direction.NONE (OK)
+			-pridana metoda isBlocked
+		
+		(OK)
+		-PRB: dlouha inicializaci tableOfMoves. Pro stavy typu [Block, Block, Free, Block] se dlouho generuje jediny mozny Direction -- Direction.DOWN
+			-problem byl v nahodne generaci cisel v Direction.getRandomDirection
+		
+
+Brouk.move:
+	-staci zpracovat situace, kdy jdeme na Food, Free. Block a Brou se vyresili v Brouk.Move.initTable (OK)
+
+-Environment.simulationCycle upraveny
+	-na konci catch bloku musi byt return, jinak by simulationCycle pokracoval dal a uz by se nedal zastavit (OK)
+
+-PRB: Bouk se muze porad motat dokola (doleva, doprava, doleva, doprava, ...)
+
+GUI
+	-prejmenovani hodne promennych pro prehlednost (OK)
+	-nepotrebuje v sobe mit ulozene field, kdyz uz ma referenci na Environment. (OK)
+	-buggField nebude JLabel[][], ale JButton[][] kvuli registraci ActionListeneru (OK)
+
+
+Environment.generateFood:
+	-musi probihat nejen na zacatku simulace
+
+
+====================================================
+						TODO
+====================================================
 -jak pracovat s Properties?
 
 -jak roztahnout vsechny komponenty uvnitr JPanelu pres cely JPanel?

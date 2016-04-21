@@ -31,9 +31,6 @@ public class Zkouska implements Runnable {
     public static void main(String[] args) {
         /*Zkouska program = new Zkouska() ;
         SwingUtilities.invokeLater(program);*/
-        int b = 3 ;
-        assert (b == 1) : "b neni 1, ale je " + b ;
-        if (b == 1) System.out.println("b == 1");
     }
 
     public Zkouska() {

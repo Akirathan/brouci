@@ -32,14 +32,12 @@ public enum Direction {
         int a = random.nextInt(4) ;
         switch (a) {
             case 0 :
-                return NONE ;
-            case 1 :
                 return UP ;
+            case 1 :
+                return RIGHT ;
             case 2 :
-                return RIGHT;
+                return DOWN;
             case 3 :
-                return DOWN ;
-            case 4 :
                 return LEFT ;
         }
         return NONE ;
