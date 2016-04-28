@@ -108,8 +108,10 @@ public class GUI extends JFrame{
                 buggField[i][j].setEnabled(true);
             }
         }
+        energyLabel.setText("energy: ");
         energyLabel.setVisible(true);
     }
+
 
     private void startButtonClicked(ActionEvent event) {
         worker = new Worker() ;

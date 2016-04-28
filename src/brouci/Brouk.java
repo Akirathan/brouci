@@ -15,7 +15,8 @@ public class Brouk extends Field {
 
 
         public Move() {
-            tableOfMoves = new TreeMap<>() ;
+            tableOfMoves = geneticInformation.getTableOfMoves() ;
+            //tableOfMoves = new TreeMap<>() ;
             initTable();
         }
 
@@ -66,13 +67,38 @@ public class Brouk extends Field {
             System.out.println();
         }
 
-        //D
+        /**
+         * Smicha genetickou informaci dvou Brouku - tj. nahodne vybira prvky od otce a matky do
+         * tableOfMoves potomka (potomek je jeste neexistujici objekt)
+         * @param otherTable
+         * @return
+         */
+        private Map<BuggNeighbourhood, Direction> mixTables(Map<BuggNeighbourhood, Direction> otherTable) {
+            Random random = new Random() ;
+            Map<BuggNeighbourhood, Direction> ret = new TreeMap<>() ;
+            for (Map.Entry<BuggNeighbourhood,Direction> entry : this.tableOfMoves.entrySet()) {
+                double num = random.nextDouble() ;
+                if (num > 0.5) {
+                    ret.put(entry.getKey(), otherTable.get(entry.getKey())) ; //vlozime zaznam z cizi tabulky
+                }
+                else {
+                    ret.put(entry.getKey(), entry.getValue()) ; //vlozime zaznam z nasi tabulky
+                }
+            }
+            return ret ;
+        }
+
+
         private void printTable() {
             for (Map.Entry<BuggNeighbourhood,Direction> entry: tableOfMoves.entrySet()) {
                 System.out.println(entry.getKey() + " --> " + entry.getValue());
             }
         }
 
+        /**
+         * Pohne Broukem. Nemusime osetrovat pripady, kdy se Brouk chce pohnout do Blocku,
+         * ty vyresime uz v metode initTable.
+         */
         public void move() {
             BuggNeighbourhood actualLocation = new BuggNeighbourhood(location, environment) ;
             Direction direction = tableOfMoves.get(actualLocation) ; //najdi smer, kam se Brouk chce vydat
@@ -90,9 +116,34 @@ public class Brouk extends Field {
         }
     }
 
+
+    private class GeneticInformation {
+        private Map<BuggNeighbourhood, Direction> tableOfMoves ;
+
+        public Map<BuggNeighbourhood, Direction> getTableOfMoves() {
+            return tableOfMoves ;
+        }
+
+        public GeneticInformation() {
+            move.initTable();
+        }
+
+        public GeneticInformation(GeneticInformation otherInformation) {
+            move.mixTables(otherInformation.tableOfMoves) ;
+        }
+    }
+
+
+    private GeneticInformation geneticInformation ;
+    public enum buggState_t {PREGNANT, NORMAL}
+    /**
+     * Zbyvajici cas, po ktery bude brouk cekat potomka.
+     */
+    private int pregnantTime ;
     private Move move ;
     private Coordinate location ;
     private int energy ;
+    private buggState_t state ;
 
     /**
      * Brouk ma referenci na Environment kvuli tomu, aby
@@ -111,7 +162,7 @@ public class Brouk extends Field {
     public Brouk(Coordinate location, Environment environment) {
         this.environment = environment ;
         move = new Move() ;
-        energy = 100 ;
+        energy = 200 ;
         this.location = location ;
     }
 
@@ -125,6 +176,10 @@ public class Brouk extends Field {
 
     public int getEnergy() {
         return energy ;
+    }
+
+    public Map<BuggNeighbourhood, Direction> getTableOfMoves() {
+        return move.tableOfMoves ;
     }
 
     /**
@@ -147,12 +202,68 @@ public class Brouk extends Field {
         return direction ;
     }
 
+    /**
+     * Zpracuje pohyb brouka. Pokud brouk ceka potomka,
+     * tak snizi pregnantTime, jinak se hybne.
+     */
     public void move() {
-        move.move() ;
+        if (state == buggState_t.PREGNANT) {
+            pregnantTime -- ;
+            if (pregnantTime == 0) {
+                giveBirth() ;
+            }
+        }
+        else {
+            move.move();
+        }
     }
 
     public void eatFood(Food food) {
         energy += 10 ;
+    }
+
+    /**
+     * Je tento Brouk vhodny partner k pareni?
+     * @return
+     */
+    private boolean isProperPartner() {
+        return energy >= 60 ;
+    }
+
+    /**
+     * Zpracuje interakci dvou brouku. Podiva se, jestli v okolnim BuggNeighbourhood
+     * je nejaky jiny Brouk, jestli ano, tak zkontroluje, jestli je to vhodny partner
+     * k pareni a popripade se s nim spari.
+     */
+    public void buggInteraction() {
+        BuggNeighbourhood actualLocation = new BuggNeighbourhood(location, environment) ;
+        for (int i = 0; i < 4; i++) {
+            if (actualLocation.get(i) instanceof Brouk) {
+                Brouk brouk = (Brouk)actualLocation.get(i) ;
+                if (this.isProperPartner() && brouk.isProperPartner()) { //jestli jsou brouci schopni pareni
+                    this.initMating(brouk);
+                }
+            }
+        }
+    }
+
+    /**
+     * Zpracuje vznik noveho potomka.
+     * Matka da potomkovi nahodne mnozstvi energie.
+     */
+    private void giveBirth() {
+
+    }
+
+    /**
+     * Zapocne pareni dvou brouku.
+     * this vystupuje jako otec a brouk jako matka.
+     * @param brouk
+     */
+    private void initMating(Brouk brouk) {
+        brouk.state = buggState_t.PREGNANT ;
+        brouk.pregnantTime = environment.getBuggPregnantTime() ; //nastavime matce cas cekani na potomka
+        Map<BuggNeighbourhood, Direction> newTableOfMoves = this.move.mixTables(brouk.getTableOfMoves()) ; //mix geneticke informace
     }
 
     @Override
@@ -171,3 +282,5 @@ public class Brouk extends Field {
     }
 
 }
+
+

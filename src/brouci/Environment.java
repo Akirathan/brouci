@@ -2,9 +2,7 @@ package brouci;
 
 
 import java.io.*;
-import java.util.Map;
-import java.util.Random;
-import java.util.TreeMap;
+import java.util.*;
 
 public class Environment {
 
@@ -13,15 +11,25 @@ public class Environment {
     private boolean endOfSimulation ;
 
     /**
+     * Doba, po kterou budou brouk cekat potomka.
+     * Po tuto dobu se dany brouk nemuze hybat.
+     */
+    private int buggPregnantTime ;
+
+    /**
      * Slouzi pro rychle vyhledavani brouku podle souradnic.
      * Potrebne predtim, nez spolu dva brouci zacnou interagovat -
      * na jednoho brouka dostaneme odkaz a druheho brouka musime najit.
      */
-    private Map<Coordinate, Brouk> buggMap ;
+    private List<Brouk> buggMap ;
 
     public Environment(String filename) {
-        buggMap = new TreeMap<>() ;
-        loadFromFile(filename);
+        buggMap = new ArrayList<>() ;
+        try {
+            loadFromFile(filename);
+        } catch (MapFormatException e) {
+            loadDefaultFile() ;
+        }
         gui = new GUI(this) ;
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -45,8 +53,6 @@ public class Environment {
     public void setBroukLocation(Brouk brouk, Coordinate location) {
         Coordinate oldLocation = brouk.getLocation() ;
         brouk.setLocation(location);
-        buggMap.remove(oldLocation) ;
-        buggMap.put(location, brouk) ;
 
         //zmen field
         field[oldLocation.X][oldLocation.Y] = new Free() ;
@@ -59,6 +65,10 @@ public class Environment {
 
     public int getFieldHeight() {
         return field.length ;
+    }
+
+    public int getBuggPregnantTime() {
+        return buggPregnantTime ;
     }
 
     /**
@@ -74,10 +84,17 @@ public class Environment {
     }
 
     /**
+     * Potrebna v pripade, kdy loadFromFile vyhodi MapFormatException.
+     */
+    private void loadDefaultFile() {
+        //loadFromFile("default.txt") ;
+    }
+
+    /**
      * Naplni field
      * @param filename
      */
-    private void loadFromFile(String filename) {
+    private void loadFromFile(String filename) throws MapFormatException {
         try {
             BufferedReader bufferedReader = new BufferedReader(new FileReader(filename)) ;
             int N = Integer.parseInt(bufferedReader.readLine()) ;
@@ -88,6 +105,9 @@ public class Environment {
                 String line = bufferedReader.readLine() ;
                 j = 0 ;
                 for (char c : line.toCharArray()) {
+                    if (i >= N || j >= M) {
+                        throw new MapFormatException("Incorrect format of input file") ;
+                    }
                     switch (c) {
                         case ' ' :
                             field[i][j] = new Free() ;
@@ -95,7 +115,7 @@ public class Environment {
                         case 'B' :
                             Coordinate coordinate = new Coordinate(i, j) ;
                             field[i][j] = new Brouk(coordinate, this) ;
-                            buggMap.put(coordinate, (Brouk)field[i][j]) ;
+                            buggMap.add((Brouk)field[i][j]) ;
                             break ;
                         case 'X' :
                             field[i][j] = new Block() ;
@@ -109,7 +129,9 @@ public class Environment {
                 }
                 i ++ ;
             }
-        } catch (IOException e) { }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void drawField() {
@@ -117,7 +139,7 @@ public class Environment {
     }
 
     private void generateFood() {
-        double foodGeneration = 0.3 ; //nastavitelne
+        double foodGeneration = 0.1 ; //nastavitelne
         Random random = new Random() ;
         for (int i = 0; i < field.length; i++) {
             for (int j = 0; j < field[0].length; j++) {
@@ -160,9 +182,9 @@ public class Environment {
             setBroukLocation(brouk, newCoordinate); //nastavit novou lokaci brouka
         }
         else if (newField instanceof Brouk) {
-            Brouk brouk1 = buggMap.get(newCoordinate) ; //vyhledat brouka podle indexu v mape
-            buggInteraction(brouk, brouk1);
-            //TODO
+            //Brouk brouk1 = buggMap.get(newCoordinate) ; //vyhledat brouka podle indexu v mape
+            //buggInteraction(brouk, brouk1);
+            //todo
         }
         else if (newField instanceof Food) {
             brouk.eatFood((Food)newField);
@@ -170,12 +192,6 @@ public class Environment {
         }
     }
 
-    /**
-     * Zpracovava interakci mezi dvema Broukama.
-     */
-    private void buggInteraction(Brouk bugg1, Brouk bugg2) {
-
-    }
 
     /**
      * Vytvori a inicializuje vsechny Brouky.
@@ -197,21 +213,28 @@ public class Environment {
     public void simulationCycle() {
         double simulationSpeed = 1.0 ; //PROPERTIES
         while(!endOfSimulation) {
-            for (Map.Entry<Coordinate,Brouk> entry : buggMap.entrySet()) {
-                BuggNeighbourhood buggNeighbourhood = getBuggNeighbourhood(entry.getValue()); //sousedni policka daneho brouka
-                entry.getValue().move();
+            for (Brouk brouk : buggMap) {
+                BuggNeighbourhood buggNeighbourhood = getBuggNeighbourhood(brouk); //sousedni policka daneho brouka
+                brouk.move();
             }
+            generateFood();
             drawField();
 
             //pouze v tomhle bloku kodu se da simulationCycle prerusit
             try {
                 Thread.sleep(2000); //todo prevod simulationSpeed na milis
             } catch (InterruptedException e) {
-                System.out.println("simulationCycle interrupted.");
                 return ;
             }
         }
     }
 
+}
+
+
+class MapFormatException extends Exception {
+    MapFormatException(String message) {
+        super(message) ;
+    }
 }
 

@@ -1,5 +1,5 @@
 ====================================================
-						DONE
+                                DONE
 ====================================================
 Brouk bude mit referenci na Environment
 
@@ -23,7 +23,7 @@ Brouk.Move.initTable:
 		
 
 Brouk.move:
-	-staci zpracovat situace, kdy jdeme na Food, Free. Block a Brou se vyresili v Brouk.Move.initTable (OK)
+	-staci zpracovat situace, kdy jdeme na Food, Free. Block a Brouk se vyresili v Brouk.Move.initTable (OK)
 
 -Environment.simulationCycle upraveny
 	-na konci catch bloku musi byt return, jinak by simulationCycle pokracoval dal a uz by se nedal zastavit (OK)
@@ -39,9 +39,26 @@ GUI
 Environment.generateFood:
 	-musi probihat nejen na zacatku simulace
 
+26.4.
+Environment.loadFromFile
+	-kontrola mezi - tj. jestli je soubor spravne formatovany
+	-zatim se kontroluji jenom meze - nekontroluje se, jestli se vyplni cely field.
+	+MapFormatException
+
+PRB
+Vic brouku:
+kazdy brouk vyvola Environment.setBroukLocation, ktere invaliduje buggMap, takze
+forcyklus v simulationCycle nefunguje.
+FIX (OK)
+buggMap zmenit z TreeMap na ArrayList
+	-sice prijdeme o rychle vyhledavani podle Coordinate, ale predpokladejme, ze Brouku bude malo,
+	takze nam to nevadi.
+
+Pareni (TODO)
++Brouk.Move.mixTables
 
 ====================================================
-						TODO
+                                TODO
 ====================================================
 -jak pracovat s Properties?
 
@@ -49,3 +66,7 @@ Environment.generateFood:
 
 -Coordinate.plus:
 	Nemela by nevracet new Coordinate(...) ?
+
+-v GUI pridat track na brouky
+
+-pojmenovat Map<BuggNeighbourhood, Direction>, abychom to vsude nemuseli opisovat. - to neni dobry napad (OK)
