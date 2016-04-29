@@ -54,9 +54,12 @@ buggMap zmenit z TreeMap na ArrayList
 	-sice prijdeme o rychle vyhledavani podle Coordinate, ale predpokladejme, ze Brouku bude malo,
 	takze nam to nevadi.
 
-Pareni (TODO)
-+Brouk.Move.mixTables
-
+28.4.
+Pareni
+    -Move odstranen, zamenen za GeneticInformation
+    
+Problem s umiranim brouku. Zobrazeni hrobecku a jeho odstraneni nefunguje. (TODO)
+Brouci se budou otacet ???
 ====================================================
                                 TODO
 ====================================================
@@ -70,3 +73,5 @@ Pareni (TODO)
 -v GUI pridat track na brouky
 
 -pojmenovat Map<BuggNeighbourhood, Direction>, abychom to vsude nemuseli opisovat. - to neni dobry napad (OK)
+
+-this convention?

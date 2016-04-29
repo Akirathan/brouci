@@ -25,4 +25,9 @@ public class Coordinate implements Comparable<Coordinate> {
             return 1 ;
         else return 0 ;
     }
+
+    @Override
+    public String toString() {
+        return "[" + X + "," + Y + "]" ;
+    }
 }

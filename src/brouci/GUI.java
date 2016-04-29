@@ -19,11 +19,16 @@ public class GUI extends JFrame{
     private JPanel buggPropertiesPanel;
     //--- komponenty patrici do buggPropertiesPanel ---
     private JLabel energyLabel ;
+    private JLabel ageLabel ;
+    private JLabel childrenAsMotherLabel ;
+    private JLabel childrenAsFatherLabel ;
+    private JLabel IDLabel ;
     //-------------------------------------------------
 
 
     private JButton pauseButton ;
     private JButton startButton ;
+    private JLabel roundCountLabel ;
     private JLabel stateLabel ;
     private Environment environment ;
     private Worker worker ;
@@ -47,20 +52,34 @@ public class GUI extends JFrame{
         addListeners();
     }
 
-    public void drawField() {
+    public void draw() {
+        roundCountLabel.setText("round: " + environment.getRoundCount());
         for (int i = 0; i < buggField.length; i++) {
             for (int j = 0; j < buggField[0].length; j++) {
                 Coordinate coordinate = new Coordinate(i,j) ;
-                if (environment.getField(coordinate) instanceof Brouk) {
-                    buggField[i][j].setBackground(new Color(150,0,0));
+                Field field = environment.getField(coordinate) ;
+                if (field instanceof Brouk) {
+                    switch (((Brouk) field).getState()) {
+                        case NORMAL:
+                            buggField[i][j].setBackground(new Color(150,0,0));
+                            break ;
+                        case PREGNANT:
+                            buggField[i][j].setBackground(new Color(150, 70, 101));
+                            break ;
+                    }
                 }
-                else if (environment.getField(coordinate) instanceof Block) {
-                    buggField[i][j].setBackground(new Color(0, 0, 0));
+                else if (field instanceof Block) {
+                    if (field instanceof BuggGrave) {
+                        buggField[i][j].setBackground(new Color(148, 92, 3));
+                    }
+                    else {
+                        buggField[i][j].setBackground(new Color(0, 0, 0));
+                    }
                 }
-                else if (environment.getField(coordinate) instanceof Free) {
+                else if (field instanceof Free) {
                     buggField[i][j].setBackground(new Color(0, 100, 0));
                 }
-                else if (environment.getField(coordinate) instanceof Food) {
+                else if (field instanceof Food) {
                     buggField[i][j].setBackground(new Color(200, 200, 100));
                 }
             }
@@ -95,6 +114,14 @@ public class GUI extends JFrame{
 
     }
 
+    private void resetBuggPropertiesPanel() {
+        IDLabel.setText("ID: ");
+        energyLabel.setText("energy: ");
+        ageLabel.setText("age: ");
+        childrenAsMotherLabel.setText("children(mother): ");
+        childrenAsFatherLabel.setText("children(father): ");
+    }
+
     /**
      * Zastavi workera, nastavi text do stateLabel,
      * nastavi klikatelne buggField.
@@ -109,7 +136,7 @@ public class GUI extends JFrame{
             }
         }
         energyLabel.setText("energy: ");
-        energyLabel.setVisible(true);
+        buggPropertiesPanel.setVisible(true);
     }
 
 
@@ -123,7 +150,7 @@ public class GUI extends JFrame{
                 buggField[i][j].setEnabled(false);
             }
         }
-        energyLabel.setVisible(false);
+        buggPropertiesPanel.setVisible(false);
     }
 
     /**
@@ -135,10 +162,14 @@ public class GUI extends JFrame{
         if (field instanceof Brouk) {
             Brouk brouk = (Brouk)field ;
             energyLabel.setText("energy: " + brouk.getEnergy());
+            ageLabel.setText("age: " + brouk.getAge());
+            childrenAsMotherLabel.setText("children(mother): " + brouk.getNumberOfChildrenAsMother());
+            childrenAsFatherLabel.setText("children(father): " + brouk.getNumberOfChildrenAsFather());
+            IDLabel.setText("ID: " + brouk.ID);
         }
         //todo klikli jsme na neco jineho, nez na brouka
         else {
-            energyLabel.setText("energy: ");
+            resetBuggPropertiesPanel();
         }
     }
 
@@ -169,84 +200,115 @@ public class GUI extends JFrame{
 
     private void initComponents() {
 
-        pauseButton = new JButton();
-        buggPanel = new JPanel();
-        buggPropertiesPanel = new JPanel();
-        energyLabel = new JLabel();
-        startButton = new JButton();
-        stateLabel = new JLabel();
+        pauseButton = new javax.swing.JButton();
+        buggPanel = new javax.swing.JPanel();
+        buggPropertiesPanel = new javax.swing.JPanel();
+        ageLabel = new javax.swing.JLabel();
+        energyLabel = new javax.swing.JLabel();
+        childrenAsMotherLabel = new javax.swing.JLabel();
+        IDLabel = new javax.swing.JLabel();
+        childrenAsFatherLabel = new javax.swing.JLabel();
+        startButton = new javax.swing.JButton();
+        stateLabel = new javax.swing.JLabel();
+        roundCountLabel = new javax.swing.JLabel();
 
-        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         pauseButton.setText("Pause");
 
-        GroupLayout buggPanelLayout = new GroupLayout(buggPanel);
+        javax.swing.GroupLayout buggPanelLayout = new javax.swing.GroupLayout(buggPanel);
         buggPanel.setLayout(buggPanelLayout);
         buggPanelLayout.setHorizontalGroup(
-                buggPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                buggPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGap(0, 480, Short.MAX_VALUE)
         );
         buggPanelLayout.setVerticalGroup(
-                buggPanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                buggPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGap(0, 383, Short.MAX_VALUE)
         );
 
-        energyLabel.setText("f");
+        ageLabel.setText("age: ");
 
-        GroupLayout broukPropertiesLayout = new GroupLayout(buggPropertiesPanel);
-        buggPropertiesPanel.setLayout(broukPropertiesLayout);
-        broukPropertiesLayout.setHorizontalGroup(
-                broukPropertiesLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                        .addGroup(broukPropertiesLayout.createSequentialGroup()
-                                .addComponent(energyLabel)
-                                .addGap(0, 100, Short.MAX_VALUE))
+        energyLabel.setText("energy: ");
+
+        childrenAsMotherLabel.setText("children(mother): ");
+
+        IDLabel.setText("ID: ");
+
+        childrenAsFatherLabel.setText("children(father): ");
+
+        javax.swing.GroupLayout buggPropertiesPanelLayout = new javax.swing.GroupLayout(buggPropertiesPanel);
+        buggPropertiesPanel.setLayout(buggPropertiesPanelLayout);
+        buggPropertiesPanelLayout.setHorizontalGroup(
+                buggPropertiesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(buggPropertiesPanelLayout.createSequentialGroup()
+                                .addGroup(buggPropertiesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(ageLabel)
+                                        .addComponent(energyLabel)
+                                        .addComponent(childrenAsMotherLabel)
+                                        .addComponent(IDLabel)
+                                        .addComponent(childrenAsFatherLabel))
+                                .addGap(0, 94, Short.MAX_VALUE))
         );
-        broukPropertiesLayout.setVerticalGroup(
-                broukPropertiesLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                        .addGroup(broukPropertiesLayout.createSequentialGroup()
+        buggPropertiesPanelLayout.setVerticalGroup(
+                buggPropertiesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(buggPropertiesPanelLayout.createSequentialGroup()
+                                .addComponent(IDLabel)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(ageLabel)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(energyLabel)
-                                .addGap(0, 231, Short.MAX_VALUE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(childrenAsMotherLabel)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(childrenAsFatherLabel)
+                                .addContainerGap(147, Short.MAX_VALUE))
         );
 
         startButton.setText("Start");
 
         stateLabel.setText("state: initiated");
 
-        GroupLayout layout = new GroupLayout(getContentPane());
+        roundCountLabel.setText("round: ");
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-                layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addGroup(layout.createSequentialGroup()
                                                 .addGap(41, 41, 41)
-                                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                                                        .addGroup(layout.createSequentialGroup()
-                                                                .addComponent(startButton)
-                                                                .addGap(18, 18, 18)
-                                                                .addComponent(pauseButton))
-                                                        .addGroup(layout.createSequentialGroup()
-                                                                .addComponent(buggPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                                                                .addGap(18, 18, 18)
-                                                                .addComponent(buggPropertiesPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))))
+                                                .addComponent(buggPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                .addComponent(buggPropertiesPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addGroup(layout.createSequentialGroup()
+                                                .addGap(42, 42, 42)
+                                                .addComponent(startButton)
+                                                .addGap(18, 18, 18)
+                                                .addComponent(pauseButton))
                                         .addGroup(layout.createSequentialGroup()
                                                 .addGap(324, 324, 324)
-                                                .addComponent(stateLabel)))
-                                .addContainerGap(122, Short.MAX_VALUE))
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                                        .addComponent(stateLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                        .addComponent(roundCountLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                                .addContainerGap(16, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
-                layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGroup(layout.createSequentialGroup()
                                 .addGap(6, 6, 6)
                                 .addComponent(stateLabel)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(roundCountLabel)
                                 .addGap(18, 18, 18)
-                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                         .addComponent(pauseButton)
                                         .addComponent(startButton))
-                                .addGap(27, 27, 27)
-                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                                        .addComponent(buggPropertiesPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(buggPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(buggPropertiesPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(buggPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                                 .addContainerGap(118, Short.MAX_VALUE))
         );
 

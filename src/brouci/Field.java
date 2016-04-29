@@ -78,3 +78,21 @@ class Free extends Field {
         return "Free" ;
     }
 }
+
+class BuggGrave extends Block {
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof BuggGrave ;
+    }
+
+    @Override
+    public int hashCode() {
+        return 5 ;
+    }
+
+    @Override
+    public String toString() {
+        return "Grave" ;
+    }
+}

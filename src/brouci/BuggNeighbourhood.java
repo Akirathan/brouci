@@ -117,7 +117,7 @@ class BuggNeighbourhood implements Comparable<BuggNeighbourhood> {
 
     /**
      * Potrebne pri geneticke vymene rodicu -
-     * budou se prochazet obe tabulky Brouk.move.tableOfMoves
+     * budou se prochazet obe tabulky Brouk.decideMove.tableOfMoves
      * @param other
      * @return
      */

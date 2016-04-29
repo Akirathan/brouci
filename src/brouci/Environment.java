@@ -6,25 +6,55 @@ import java.util.*;
 
 public class Environment {
 
+
+    BufferedWriter debugOutput ;
     private Field[][] field ;
     private GUI gui ;
     private boolean endOfSimulation ;
-
+    /**
+     * Pocet ubehnutych kol simulace.
+     */
+    private int roundCount ;
     /**
      * Doba, po kterou budou brouk cekat potomka.
      * Po tuto dobu se dany brouk nemuze hybat.
      */
     private int buggPregnantTime ;
-
     /**
      * Slouzi pro rychle vyhledavani brouku podle souradnic.
      * Potrebne predtim, nez spolu dva brouci zacnou interagovat -
      * na jednoho brouka dostaneme odkaz a druheho brouka musime najit.
      */
     private List<Brouk> buggMap ;
+    /**
+     * Seznam mist, kde jsou hrobecky brouku. Po dalsim kole se
+     * z techto hrobecku stanou Free.
+     */
+    private List<Coordinate> buggGraves ;
+    /**
+     *
+     */
+    private List<Brouk> deadBugs ;
+    /**
+     * Docasny list potomku. Potrebujeme ho, aby se v simulationCycle
+     * nerozbil cyklus pres buggMap v momente, kdy do buggMap vlozime
+     * noveho potomka. Potomky budeme ukladat do buggChildren a az na
+     * konci kola (tj. na konci simulationCycle) je zkopirujeme do
+     * buggMap.
+     */
+    private List<Brouk> buggChildren ;
+
 
     public Environment(String filename) {
+        try {
+            debugOutput = new BufferedWriter(new FileWriter("/afs/ms/u/b/bruchpa/IntelliJ_projects/Brouci/debug.txt")) ;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        field = new Field[0][0] ;
+        buggPregnantTime = 2 ;
         buggMap = new ArrayList<>() ;
+        buggGraves = new ArrayList<>() ;
         try {
             loadFromFile(filename);
         } catch (MapFormatException e) {
@@ -37,12 +67,16 @@ public class Environment {
             }
         });
         generateFood();
-        drawField() ;
+        draw() ;
         //simulationCycle(); //DEBUG
     }
 
     public Environment() {
-        field = new Field[0][0] ;
+
+    }
+
+    public int getRoundCount() {
+        return roundCount ;
     }
 
     /**
@@ -81,6 +115,24 @@ public class Environment {
             return new Block() ;
 
         else return field[coordinate.X][coordinate.Y] ;
+    }
+
+    /**
+     * Vrati 4 sousedni policka kolem brouka.
+     * Pozdeji se tyto 4 sousedni policka tomuto broukovi predaji,
+     * na zaklade nich se bude brouk pohybovat.
+     * @param brouk
+     */
+    BuggNeighbourhood getBuggNeighbourhood(Brouk brouk) {
+        return new BuggNeighbourhood(brouk.getLocation(), this) ;
+    }
+
+    /**
+     *
+     */
+    public void addBuggChild(Brouk child) {
+        buggChildren.add(child) ;
+        field[child.getLocation().X][child.getLocation().Y] = child ;
     }
 
     /**
@@ -134,8 +186,8 @@ public class Environment {
         }
     }
 
-    private void drawField() {
-        gui.drawField();
+    private void draw() {
+        gui.draw();
     }
 
     private void generateFood() {
@@ -150,17 +202,6 @@ public class Environment {
                 }
             }
         }
-    }
-
-    /**
-     * Vrati dalsiho brouka, ktery je na tahu,
-     * nebo null, pokud zadny takovy brouk neexistuje.
-     * Vrati se null = nastal konec kola.
-     * Na konci kola se muze napriklad zmenit pocasi.
-     * TODO prejmenovat.
-     * */
-    private Brouk getNextBrouk() {
-        return null ;
     }
 
 
@@ -192,33 +233,56 @@ public class Environment {
         }
     }
 
-
     /**
-     * Vytvori a inicializuje vsechny Brouky.
+     * Zabije brouka. Metoda je volana v momente, kdy prochazime
+     * buggMap. Coz znamena, ze brouka nesmime odstranit z buggMap,
+     * jinak bychom invalidovali vsechny iteratory, takze ho priradime
+     * do seznamu deadBugs.
+     * @param bugg brouk, ktery chce zabit, protoze mu
+     *             dosla energie.
      */
-    void createBuggs() {
-
+    public void killBugg(Brouk bugg) {
+        deadBugs.add(bugg) ;
+        buggChildren.remove(bugg) ; //odsud ho odstranit muzeme, zadny iterator tim neinvalidujeme
+        field[bugg.getLocation().X][bugg.getLocation().Y] = new BuggGrave() ; //na misto mrtveho brouka dej hrobecek
+        buggGraves.add(bugg.getLocation()) ; //pridej hrobecek do seznamu hrobecku
     }
 
     /**
-     * Vrati 4 sousedni policka kolem brouka.
-     * Pozdeji se tyto 4 sousedni policka tomuto broukovi predaji,
-     * na zaklade nich se bude brouk pohybovat.
-     * @param brouk
+     * Odstrani vsechny hrobecky brouku na mape.
      */
-    BuggNeighbourhood getBuggNeighbourhood(Brouk brouk) {
-        return new BuggNeighbourhood(brouk.getLocation(), this) ;
+    private void removeGraves() {
+        for (Coordinate coordinate : buggGraves) {
+            field[coordinate.X][coordinate.Y] = new Free() ;
+        }
+        buggGraves = new ArrayList<>() ;
     }
 
     public void simulationCycle() {
         double simulationSpeed = 1.0 ; //PROPERTIES
         while(!endOfSimulation) {
-            for (Brouk brouk : buggMap) {
-                BuggNeighbourhood buggNeighbourhood = getBuggNeighbourhood(brouk); //sousedni policka daneho brouka
-                brouk.move();
+            removeGraves();
+            buggChildren = new ArrayList<>() ;
+            deadBugs = new ArrayList<>() ;
+
+            int bound = buggMap.size() ;
+            for (int i = 0; i < bound; i++) {
+                buggMap.get(i).decideMove();
             }
+
+            //zkopirujeme buggChildren do buggMap
+            for (Brouk child : buggChildren) {
+                buggMap.add(child) ;
+            }
+
+            //odstranime z buggMap mrtve brouky
+            for (Brouk dead : deadBugs) {
+                buggMap.remove(dead) ;
+            }
+
             generateFood();
-            drawField();
+            roundCount++ ;
+            draw();
 
             //pouze v tomhle bloku kodu se da simulationCycle prerusit
             try {
@@ -226,6 +290,29 @@ public class Environment {
             } catch (InterruptedException e) {
                 return ;
             }
+
+            record() ;
+        }
+    }
+
+    private void record() {
+        try {
+            debugOutput.write("============="); debugOutput.newLine();
+            debugOutput.write("round: "+roundCount); debugOutput.newLine();
+            debugOutput.write("============="); debugOutput.newLine();
+            debugOutput.newLine();
+            for (Brouk brouk : buggMap) {
+                debugOutput.write("======(brouk)======") ; debugOutput.newLine();
+                debugOutput.write("ID: " + brouk.ID); debugOutput.newLine();
+                debugOutput.write("location: " + brouk.getLocation()); debugOutput.newLine();
+                debugOutput.write("energy: " + brouk.getEnergy()); debugOutput.newLine();
+                debugOutput.write("state: " + brouk.getState()); debugOutput.newLine();
+                debugOutput.write("age: " + brouk.getAge()); debugOutput.newLine();
+            }
+            debugOutput.newLine();
+            debugOutput.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -235,6 +322,45 @@ public class Environment {
 class MapFormatException extends Exception {
     MapFormatException(String message) {
         super(message) ;
+    }
+}
+
+//zkouska
+class Kontejner<T> implements Iterable<T>{
+
+    class Prochazec implements Iterator<T> {
+
+        @Override
+        public boolean hasNext() {
+            return false;
+        }
+
+        @Override
+        public T next() {
+            return null;
+        }
+    }
+
+    private List<T> list ;
+    /**
+     * Ukazuje na index listu, kam az sahaji
+     * validni prvky - tj. ty, ktere nebyly
+     * pridany po cas iterace.
+     */
+    private int validIndex ;
+
+    public Kontejner() {
+        list = new ArrayList<>() ;
+    }
+
+    public void add(T t) {
+        list.add(t) ;
+        validIndex++ ;
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return null;
     }
 }
 

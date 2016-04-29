@@ -5,34 +5,27 @@ import java.util.*;
 
 public class Brouk extends Field {
 
-    private class Move {
-
-        /**
-         * Nemenna tabulka reprezentujici pohybovou funkci Brouka.
-         * f(BuggNeighbourhood) --> Direction
-         */
+    private class GeneticInformation {
         private Map<BuggNeighbourhood, Direction> tableOfMoves ;
 
+        public Map<BuggNeighbourhood, Direction> getTableOfMoves() {
+            return tableOfMoves ;
+        }
 
-        public Move() {
-            tableOfMoves = geneticInformation.getTableOfMoves() ;
-            //tableOfMoves = new TreeMap<>() ;
+        /**
+         * Konstruktor umele vytvoreneho brouka.
+         */
+        public GeneticInformation() {
+            tableOfMoves = new TreeMap<>() ;
             initTable();
         }
 
         /**
-         * Zkontroluje, jestli je zadany stav blokujici, tj. stavy jako
-         * [Block, Brouk, Block, Block], ...
-         * @param buggNeighbourhood
-         * @return
+         * Vytvori genetickou informati noveho potomka tim, ze
+         * smicha tabulky otce a matky.
          */
-        private boolean isBlocked(BuggNeighbourhood buggNeighbourhood) {
-            for (int i = 0; i < 4; i++) {
-                if (!(buggNeighbourhood.get(i) instanceof Block ||
-                        buggNeighbourhood.get(i) instanceof Brouk))
-                    return false ;
-            }
-            return true ;
+        public GeneticInformation(GeneticInformation mother, GeneticInformation father) {
+            tableOfMoves = mixTables(mother.getTableOfMoves(), father.getTableOfMoves()) ;
         }
 
         /**
@@ -64,72 +57,41 @@ public class Brouk extends Field {
                     }
                 }
             }
-            System.out.println();
+        }
+
+        /**
+         * Zkontroluje, jestli je zadany stav blokujici, tj. stavy jako
+         * [Block, Brouk, Block, Block], ...
+         * @param buggNeighbourhood
+         * @return
+         */
+        private boolean isBlocked(BuggNeighbourhood buggNeighbourhood) {
+            for (int i = 0; i < 4; i++) {
+                if (!(buggNeighbourhood.get(i) instanceof Block ||
+                        buggNeighbourhood.get(i) instanceof Brouk))
+                    return false ;
+            }
+            return true ;
         }
 
         /**
          * Smicha genetickou informaci dvou Brouku - tj. nahodne vybira prvky od otce a matky do
          * tableOfMoves potomka (potomek je jeste neexistujici objekt)
-         * @param otherTable
          * @return
          */
-        private Map<BuggNeighbourhood, Direction> mixTables(Map<BuggNeighbourhood, Direction> otherTable) {
+        private Map<BuggNeighbourhood, Direction> mixTables(Map<BuggNeighbourhood, Direction> motherTable, Map<BuggNeighbourhood, Direction> fatherTable) {
             Random random = new Random() ;
             Map<BuggNeighbourhood, Direction> ret = new TreeMap<>() ;
-            for (Map.Entry<BuggNeighbourhood,Direction> entry : this.tableOfMoves.entrySet()) {
+            for (Map.Entry<BuggNeighbourhood,Direction> entry : motherTable.entrySet()) {
                 double num = random.nextDouble() ;
                 if (num > 0.5) {
-                    ret.put(entry.getKey(), otherTable.get(entry.getKey())) ; //vlozime zaznam z cizi tabulky
+                    ret.put(entry.getKey(), motherTable.get(entry.getKey())) ; //vlozime zaznam z cizi tabulky
                 }
                 else {
-                    ret.put(entry.getKey(), entry.getValue()) ; //vlozime zaznam z nasi tabulky
+                    ret.put(entry.getKey(), fatherTable.get(entry.getKey())) ; //vlozime zaznam z nasi tabulky
                 }
             }
             return ret ;
-        }
-
-
-        private void printTable() {
-            for (Map.Entry<BuggNeighbourhood,Direction> entry: tableOfMoves.entrySet()) {
-                System.out.println(entry.getKey() + " --> " + entry.getValue());
-            }
-        }
-
-        /**
-         * Pohne Broukem. Nemusime osetrovat pripady, kdy se Brouk chce pohnout do Blocku,
-         * ty vyresime uz v metode initTable.
-         */
-        public void move() {
-            BuggNeighbourhood actualLocation = new BuggNeighbourhood(location, environment) ;
-            Direction direction = tableOfMoves.get(actualLocation) ; //najdi smer, kam se Brouk chce vydat
-            Coordinate newCoordinate = location.plus(direction.getCoordinate()) ; //vypocte nove souradnice
-            Field newField = environment.getField(newCoordinate) ;
-
-            if (newField instanceof Free) {
-                environment.setBroukLocation(Brouk.this, newCoordinate);
-                lowerEnergy();
-            }
-            else if (newField instanceof Food) {
-                environment.setBroukLocation(Brouk.this, newCoordinate);
-                eatFood((Food)newField);
-            }
-        }
-    }
-
-
-    private class GeneticInformation {
-        private Map<BuggNeighbourhood, Direction> tableOfMoves ;
-
-        public Map<BuggNeighbourhood, Direction> getTableOfMoves() {
-            return tableOfMoves ;
-        }
-
-        public GeneticInformation() {
-            move.initTable();
-        }
-
-        public GeneticInformation(GeneticInformation otherInformation) {
-            move.mixTables(otherInformation.tableOfMoves) ;
         }
     }
 
@@ -140,16 +102,26 @@ public class Brouk extends Field {
      * Zbyvajici cas, po ktery bude brouk cekat potomka.
      */
     private int pregnantTime ;
-    private Move move ;
     private Coordinate location ;
     private int energy ;
     private buggState_t state ;
-
+    private int age ;
+    /**
+     * Jednoznacky identifikator brouka.
+     */
+    public int ID ;
+    public static int IDCounter ;
+    private int numberOfChildrenAsMother;
+    private int numberOfChildrenAsFather;
     /**
      * Brouk ma referenci na Environment kvuli tomu, aby
      * se mohl sam pohybovat a nemusel s nim hybat Environment.
      */
     private Environment environment ;
+    /**
+     * Geneticka informace pro budouciho potomka.
+     */
+    private GeneticInformation childInformation ;
 
 
     /**
@@ -160,10 +132,21 @@ public class Brouk extends Field {
     }
 
     public Brouk(Coordinate location, Environment environment) {
+        ID = IDCounter++ ;
         this.environment = environment ;
-        move = new Move() ;
-        energy = 200 ;
         this.location = location ;
+        energy = 200 ;
+        geneticInformation = new GeneticInformation() ;
+        state = buggState_t.NORMAL ;
+    }
+
+    public Brouk(Coordinate location, Environment environment, int energy, GeneticInformation geneticInformation) {
+        ID = IDCounter++ ;
+        this.environment = environment ;
+        this.location = location ;
+        this.energy = energy ;
+        this.geneticInformation = geneticInformation ;
+        state = buggState_t.NORMAL ;
     }
 
     public Coordinate getLocation() {
@@ -178,15 +161,35 @@ public class Brouk extends Field {
         return energy ;
     }
 
-    public Map<BuggNeighbourhood, Direction> getTableOfMoves() {
-        return move.tableOfMoves ;
+    public int getAge() {
+        return age ;
+    }
+
+    public int getNumberOfChildrenAsMother() {
+        return numberOfChildrenAsMother ;
+    }
+
+    public int getNumberOfChildrenAsFather() {
+        return numberOfChildrenAsFather ;
+    }
+
+    public buggState_t getState() {
+        return state ;
+    }
+
+    public GeneticInformation getGeneticInformation() {
+        return geneticInformation ;
     }
 
     /**
      * Snizi energii o konstantu.
+     * Cim vyssi je vek, tim vic energie ubira
      */
     public void lowerEnergy() {
-        this.energy -= 10 ;
+        energy -= 10 + age/2 ;
+        if (energy < 0) {
+            environment.killBugg(this) ;
+        }
     }
 
 
@@ -202,24 +205,61 @@ public class Brouk extends Field {
         return direction ;
     }
 
+
+    /**
+     * Pohne Broukem. Nemusime osetrovat pripady, kdy se Brouk chce pohnout do Blocku,
+     * ty vyresime uz v metode initTable.
+     */
+    private void move() {
+        BuggNeighbourhood actualLocation = new BuggNeighbourhood(location, environment) ;
+        Direction direction = geneticInformation.getTableOfMoves().get(actualLocation) ; //najdi smer, kam se Brouk chce vydat
+        Coordinate newCoordinate = location.plus(direction.getCoordinate()) ; //vypocte nove souradnice
+        Field newField = environment.getField(newCoordinate) ;
+
+        if (newField instanceof Free) {
+            environment.setBroukLocation(Brouk.this, newCoordinate);
+            lowerEnergy();
+        }
+        else if (newField instanceof Food) {
+            environment.setBroukLocation(Brouk.this, newCoordinate);
+            eatFood((Food)newField);
+        }
+    }
+
     /**
      * Zpracuje pohyb brouka. Pokud brouk ceka potomka,
      * tak snizi pregnantTime, jinak se hybne.
      */
-    public void move() {
+    public void decideMove() {
+        age ++ ;
+        BuggNeighbourhood actualLocation = new BuggNeighbourhood(location, environment) ;
         if (state == buggState_t.PREGNANT) {
+            energy -= 10 ;
             pregnantTime -- ;
             if (pregnantTime == 0) {
                 giveBirth() ;
             }
         }
         else {
-            move.move();
+            for (int i = 0; i < 4; i++) {
+                if (actualLocation.get(i) instanceof Brouk) {
+                    Brouk brouk = (Brouk)actualLocation.get(i) ;
+                    if (this.isProperPartner() && brouk.isProperPartner()) { //jestli jsou brouci schopni pareni
+                        this.initMating(brouk);
+                        return ;
+                    }
+                }
+            }
+            move();
         }
     }
 
+    /**
+     * Sni potravu a zvysi energii.
+     * Cim je brouk starsi, tim mene ergie ziska.
+     */
     public void eatFood(Food food) {
-        energy += 10 ;
+        energy += 20 - age/10 ;
     }
 
     /**
@@ -227,24 +267,7 @@ public class Brouk extends Field {
      * @return
      */
     private boolean isProperPartner() {
-        return energy >= 60 ;
-    }
-
-    /**
-     * Zpracuje interakci dvou brouku. Podiva se, jestli v okolnim BuggNeighbourhood
-     * je nejaky jiny Brouk, jestli ano, tak zkontroluje, jestli je to vhodny partner
-     * k pareni a popripade se s nim spari.
-     */
-    public void buggInteraction() {
-        BuggNeighbourhood actualLocation = new BuggNeighbourhood(location, environment) ;
-        for (int i = 0; i < 4; i++) {
-            if (actualLocation.get(i) instanceof Brouk) {
-                Brouk brouk = (Brouk)actualLocation.get(i) ;
-                if (this.isProperPartner() && brouk.isProperPartner()) { //jestli jsou brouci schopni pareni
-                    this.initMating(brouk);
-                }
-            }
-        }
+        return age >= 3 && energy >= 110 && state == buggState_t.NORMAL;
     }
 
     /**
@@ -252,7 +275,25 @@ public class Brouk extends Field {
      * Matka da potomkovi nahodne mnozstvi energie.
      */
     private void giveBirth() {
+        Direction direction = Direction.getRandomDirection() ;
+        Coordinate childLocation = this.location.plus(direction.getCoordinate()) ;
 
+        //najdi random misto v sousedstvi pro potomka
+        while (!(environment.getField(childLocation) instanceof Free)) {
+            direction = Direction.getRandomDirection() ;
+            childLocation = this.location.plus(direction.getCoordinate()) ;
+        }
+
+        //vyber nahodne mnozstvi energie
+        Random random = new Random() ;
+        int giveEnergy = random.nextInt(this.energy - 30) ;
+        energy -= giveEnergy ;
+
+        //vytvor noveho potomka
+        environment.addBuggChild(new Brouk(childLocation, environment, giveEnergy, childInformation));
+        numberOfChildrenAsMother++ ;
+
+        this.state = buggState_t.NORMAL ;
     }
 
     /**
@@ -263,12 +304,23 @@ public class Brouk extends Field {
     private void initMating(Brouk brouk) {
         brouk.state = buggState_t.PREGNANT ;
         brouk.pregnantTime = environment.getBuggPregnantTime() ; //nastavime matce cas cekani na potomka
-        Map<BuggNeighbourhood, Direction> newTableOfMoves = this.move.mixTables(brouk.getTableOfMoves()) ; //mix geneticke informace
+        brouk.childInformation = new GeneticInformation(brouk.geneticInformation, this.geneticInformation) ; //nastavime matce genetickou informaci pro potomka
+
+        //predame matce nahodne mnozstvi energie
+        int giveEnergy = new Random().nextInt(this.energy - 20) ;
+        brouk.energy += giveEnergy ;
+        this.energy -= giveEnergy ;
+
+        this.numberOfChildrenAsFather++ ;
     }
 
     @Override
     public boolean equals(Object o) {
-        return false ;
+        if (o instanceof Brouk) {
+            return ((Brouk)o).ID == this.ID ;
+        }
+        else
+            return false ;
     }
 
     @Override
